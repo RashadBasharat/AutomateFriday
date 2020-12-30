@@ -1,6 +1,6 @@
 # Author: Rashad Basharat
 # Contributions by Lucy Harris
-# Maintained by:
+# Maintained by: Lucy Harris
 # Date Modified: 30/12/2020
 
 from selenium.webdriver.common.by import By
@@ -51,11 +51,12 @@ driver.find_element_by_id("userNameInput").send_keys(fieldValues[0])       # fie
 driver.find_element_by_id("passwordInput").send_keys(fieldValues[1])
 driver.find_element_by_id("submitButton").click()
 
-wait = WebDriverWait(driver, 30)        #defining how long to wait for something to appear, can be changed but usually 20 seconds is enough for crm/powerbi being slow
+wait = WebDriverWait(driver, 30)        # defining how long to wait for something to appear, can be changed but usually 20 seconds is enough for crm/powerbi being slow
 
-#to break down wait.until(EC
-#wait is the 20 seconds said above, until is another function basically saying until a condition is filled
-#EC is 'expected condition' which is another library function imported that gives a list of conditions you can use for the web
+# to break down wait.until(EC
+# wait is the 20 seconds said above, until is another function basically saying until a condition is filled
+# EC is 'expected condition' which is another library function imported that gives a list of conditions you can use for the web
+
 bypass_staying_signed_in = wait.until(EC.presence_of_element_located((By.XPATH, '//input[@value="No"]')))
 driver.find_element_by_xpath('//input[@value="No"]').click()        #a stay signed in screen always appears which needs to be told no
 
@@ -63,12 +64,12 @@ driver.find_element_by_xpath('//input[@value="No"]').click()        #a stay sign
 
 driver.get("https://hscic365.crm11.dynamics.com/crmreports/viewer/viewer.aspx?action=filter&id=9d3b28aa-ad14-e911-a9e2-000d3a2bb31e&helpID=DARS-ProcessStage_v5new.rdl")
 
-#this is called an iframe, it is basically a separate self contained window inside the the webpage which needs to be switched to as it's not part of the main HTML
+# this is called an iframe, it is basically a separate self contained window inside the the webpage which needs to be switched to as it's not part of the main HTML
 wait.until(EC.frame_to_be_available_and_switch_to_it((By.NAME, 'resultFrame')))
 
-#this is using something called an XPATH which is basically directly pointing at that exact value on the webpage with no regard as to what it may be
-#it isn't ideal but in most of the cases here, the only way to do it
-#this means if something changes slightly it may brek and need the new location, although thankfully this kind of stuff isn't updated often
+# this is using something called an XPATH which is basically directly pointing at that exact value on the webpage with no regard as to what it may be
+# it isn't ideal but in most of the cases here, the only way to do it
+# this means if something changes slightly it may break and need the new location, although thankfully this kind of stuff isn't updated often
 wait.until(EC.presence_of_element_located((By.XPATH, "//div[contains(@id, '_1_89iT0_aria')]/div[1]")))
 
 DARS_Summary_OpenByStage_Total = driver.find_element_by_xpath("//div[contains(@id, '_1_89iT0_aria')]/div[1]").get_attribute('innerHTML')
@@ -76,7 +77,7 @@ DARS_Summary_OpenByStage_Subtotal = driver.find_element_by_xpath("//div[contains
 DARS_Summary_OpenByStage_Subtotal_Breach = driver.find_element_by_xpath("//div[contains(@id, '1_67iT0R0x0C0x1_aria')]/div[1]").get_attribute('innerHTML')
 DARS_Summary_OpenByStage_Total_Breach = driver.find_element_by_xpath("//div[contains(@id, '_1_85iT0C0x1_aria')]/div[1]").get_attribute('innerHTML')
 
-#get_attribute('innerHTML') means the element found isn't exactly what we need, it means if you were to get the HTML INSIDE the element then that's what the required value will be
+# get_attribute('innerHTML') means the element found isn't exactly what we need, it means if you were to get the HTML INSIDE the element then that's what the required value will be
 
 driver.find_element_by_id("reportViewer_ctl08_ctl04_ctl01").click()
 driver.find_element_by_id("reportViewer_ctl08_ctl04_divDropDown_ctl00").click()
@@ -284,7 +285,7 @@ Average_Age_Not_Attached_To_Holder = driver.find_element_by_xpath("/html/body/di
 # Unfortunately it contains no text and only innerHTML so the previous EC cannot be used so a sleep must be used
 driver.get("https://app.powerbi.com/groups/7e6fa73a-fc03-421c-8de9-e405f86dc62f/reports/53ef3e82-3680-457e-9027-7942c75dca2a/ReportSection")
 wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, '.card')))
-time.sleep(3)
+time.sleep(1)
 found_string = str(driver.find_element_by_css_selector('.card').text).split()
 Open_at_1c = found_string[0]
 
@@ -313,9 +314,8 @@ HolderAnalysis_DataDisseminationsFinancialYTD = driver.find_element_by_xpath("//
 driver.quit()  # Closes selenium chrome driver
 
 # Here is where the Excel starts using Win32 to directly access the Excel functions
-#
 
-excel = win32.gencache.EnsureDispatch('Excel.Application')  # Opens up excel
+excel = win32.dynamic.Dispatch('Excel.Application')  # Opens up excel
 excel.Visible = True  # Makes excel visible, this can be changed to false if you dont want it to pop up
 
 file = 'C:/Users/Rashad/Documents/Python Projects/Automate_Friday/Test_Book.xlsx'  # Location of the automation book
@@ -330,6 +330,7 @@ ws.Range("Q18:Q17").AutoFill(ws.Range("Q18:Q16"), win32.constants.xlFillDefault)
 ws.Range("R18:R17").AutoFill(ws.Range("R18:R16"), win32.constants.xlFillDefault)
 ws.Range("U18:U17").AutoFill(ws.Range("U18:U16"), win32.constants.xlFillDefault)
 ws.Range("X18:X17").AutoFill(ws.Range("X18:X16"), win32.constants.xlFillDefault)
+
 ws.Cells(16, 2).Value = DARS_Summary_OpenByStage_Total  # Using the direct Y, X coordinate to fill the cell with the value
 ws.Cells(16, 3).Value = DARS_Summary_OpenByStage_Subtotal
 ws.Cells(16, 4).Value = DARS_Summary_OpenByStage_Subtotal_Breach
@@ -392,5 +393,6 @@ ws.Range("A15:O14").AutoFill(ws.Range("A15:O13"), win32.constants.xlFillDefault)
 
 wb.Save()  # Saves workbook
 wb.Close()  # Closes workbook, can be commented out if you want to have a look
+excel.Application.Quit()
 
 print("yum")
