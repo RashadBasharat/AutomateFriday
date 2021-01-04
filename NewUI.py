@@ -12,53 +12,20 @@ from selenium import webdriver
 from easygui import *
 import win32com.client as win32
 import time
+from selenium.common.exceptions import TimeoutException
+
 
 # importing all the necessary libraries and functions
-
+#
 options = webdriver.ChromeOptions()
 options.add_argument("--start-maximized")    # adding option to make chrome maximised due to crm not liking small resolutions
 driver = webdriver.Chrome(chrome_options=options, executable_path="chromedriver.exe")   # using the local chromedriver as the selenium driver
 
-msg = "Enter shortcode login information"
-title = "Holder Analysis automation login"              # setting up the GUI window
-fieldNames = ["Shortcode Email Address", "Password"]
-fieldValues = []  # we start with blanks for the values
-fieldValues = multpasswordbox(msg, title, fieldNames)
-
-while 1:
-    if fieldValues is None: break           # while loop to make sure all fields have a value in them
-    errmsg = ""
-    for i in range(len(fieldNames)):
-        if fieldValues[i].strip() == "":
-            errmsg = errmsg + ('"%s" is a required field.\n\n' % fieldNames[i])
-    if errmsg == "" : break  # if no problems found
-    fieldValues = multpasswordbox(errmsg, title, fieldNames, fieldValues)
-
-# logging in through going to a generic DARS CRM login link
-driver.get("https://adfs.hscic.gov.uk/adfs/ls/?client-request-id=1c3c0d01-f7f3-4be9-a491-ec618036a275&wa=wsignin1.0&wtre"
-           "alm=urn%3afederation%3aMicrosoftOnline&wctx=LoginOptions%3D3%26estsredirect%3d2%26estsrequest%3drQIIAZVSO2zT"
-           "YBCOm7a0FYWqYmBg6NAyIDn9_Sd-JKISfaRJ09huHKfGXirHj_h34kcc2yGeOjIWgYTEWJg6woJY6NyprB0ZEK8BwQAjjlBZmPh0-nR3Op0-"
-           "3Xd3skSOKC2DP6DxMf8h7TK7RLA4t4DN37314-en3RePvqqH1HF0ggErDP1BaXW157k43mkHWuD0UGwMOhQo5NKCIHL6yFUdpA1ymuesvsaw"
-           "cwz7iGEnEwMqTxcAkS8WqSIgmUKBLOTYrTLBOpzNQTZkkw6UEQBp7dSlHShLjZAVW0AR9x1WFGzWEWyloiDF3u7ylUao2A2CS-c52IJ10XJ4"
-           "SQ4VUbA4pwV4USb5ynbvYuI6vx6FFhyTF6DE-D4xa3qBc-B7g_BZ9nSC9w13R9_0XNfQwtx4zHBDpKkh8ty9wPONIETGYI1dT7GjjdSgVUNW"
-           "NYgOVBXRsjHyKqre6FoRuzcy0HCn2OS6TbpZiNebu4Hk0qHdr-X7CunG5FaxUx5v2RjTZpMcKZLga86-rW8Knl4VhlrixXVoJTLs2WwiE3WH"
-           "G7XF8oO6I5BtZztUJS5Je3G7ydwWDB0FqWLR-1faCjT_iquT-2Y7rgTahkb3e1uS4VA8lXQ1RyjXysZ6r8EPE83so2AoWUCvbiQ8YmK1ytmq"
-           "xCac3YrkfC11oRwp1V4kS4Qv59lIhsWwPlzJ62m8zC6TwKQATZh4u20aeGqxijMMyOMUnRrOGBQsGvAsey29pYv0JT_wTNQz3mcXA7WtMves"
-           "gYa0XMeLc1H3dPLw-dT5JPZ58irIlmZm5hYyNzNLmV-T2PFU-o9flj6823qMVZ9k3wr001eZs6lVNybcAsPRA9K_L3obNT-S-NC0g5gxY3W_"
-           "D2OKTTsS8qnGGlUijqaxo-npb9PYwyuZN7P__c0XczcggAAnCByQSwCWIFUq5JXT-cxv0&cbcxt=&mkt=&lc=")
-
-driver.find_element_by_id("userNameInput").send_keys(fieldValues[0])       # fieldValues is an array of username, password
-driver.find_element_by_id("passwordInput").send_keys(fieldValues[1])
-driver.find_element_by_id("submitButton").click()
 
 wait = WebDriverWait(driver, 30)        # defining how long to wait for something to appear, can be changed but usually 20 seconds is enough for crm/powerbi being slow
 
-# to break down wait.until(EC
-# wait is the 20 seconds said above, until is another function basically saying until a condition is filled
-# EC is 'expected condition' which is another library function imported that gives a list of conditions you can use for the web
-
-bypass_staying_signed_in = wait.until(EC.presence_of_element_located((By.XPATH, '//input[@value="No"]')))
-driver.find_element_by_xpath('//input[@value="No"]').click()        #a stay signed in screen always appears which needs to be told no
+# Takes you to the home of CRM which then asks you to login
+driver.get("https://hscic365.crm11.dynamics.com/main.aspx?app=d365default&forceUCI=1&pagetype=dashboard&id=063e7659-05d9-4030-960d-10fe269a5a8b&type=system&_canOverride=true")
 
 # Grabbing numbers
 
@@ -135,60 +102,61 @@ Combined_Mean_Working_Days_CCG = driver.find_element_by_xpath("//div[contains(@i
 # Improvement over  just waiting for the object and adding a sleep, however doesn't work if there's no fixed HTML
 # It then converts the HTML found to a string to apply the split method which puts all the constituent parts into an array where the 5th part is what we want
 
-driver.get("https://hscic365.crm11.dynamics.com/main.aspx?app=d365default&forceUCI=1&pagetype=entitylist&etn=cps_application&viewid=4c951b2a-a566-e911-a98a-00224800c940&viewType=4230")
-wait.until(EC.text_to_be_present_in_element((By.XPATH, "/html/body/div[2]/div/div[4]/div[2]/div/div/div/div/div[2]/div/section/div[3]/div/div[2]/div[2]/div/div/span"), " of "))
-found_string = str(driver.find_element_by_xpath("/html/body/div[2]/div/div[4]/div[2]/div/div/div/div/div[2]/div/section/div[3]/div/div[2]/div[2]/div/div/span").text).split()
-HolderAnalysis_Data_Destruction1 = found_string[4]
 
-driver.get("https://hscic365.crm11.dynamics.com/main.aspx?app=d365default&forceUCI=1&pagetype=entitylist&etn=cps_application&viewid=d330fc0f-986a-e911-a98c-00224800cf35&viewType=4230")
-wait.until(EC.text_to_be_present_in_element((By.XPATH, "/html/body/div[2]/div/div[4]/div[2]/div/div/div/div/div[2]/div/section/div[3]/div/div[2]/div[2]/div/div/span"), " of "))
-found_string = str(driver.find_element_by_xpath("/html/body/div[2]/div/div[4]/div[2]/div/div/div/div/div[2]/div/section/div[3]/div/div[2]/div[2]/div/div/span").text).split()
-HolderAnalysis_Data_Destruction2 = found_string[4]
 
-driver.get("https://hscic365.crm11.dynamics.com/main.aspx?app=d365default&forceUCI=1&pagetype=entitylist&etn=cps_application&viewid=8744b1b6-8f6a-e911-a98c-00224800cf35&viewType=4230")
-wait.until(EC.text_to_be_present_in_element((By.XPATH, "/html/body/div[2]/div/div[4]/div[2]/div/div/div/div/div[2]/div/section/div[3]/div/div[2]/div[2]/div/div/span"), " of "))
-found_string = str(driver.find_element_by_xpath("/html/body/div[2]/div/div[4]/div[2]/div/div/div/div/div[2]/div/section/div[3]/div/div[2]/div[2]/div/div/span").text).split()
-HolderAnalysis_Data_Destruction3 = found_string[4]
+def AFException(link, WaitElement, found):
+    try:
+        driver.get(link)
+        wait.until(EC.text_to_be_present_in_element((By.XPATH, WaitElement), " of "))
+    except TimeoutError:
+        driver.get(link)
+        wait.until(EC.text_to_be_present_in_element((By.XPATH, WaitElement), " of "))
+    found_string = str(driver.find_element_by_xpath(found).text).split()
+    return (found_string[4])
 
-driver.get("https://hscic365.crm11.dynamics.com/main.aspx?app=d365default&forceUCI=1&pagetype=entitylist&etn=cps_application&viewid=a2a4f834-3668-e911-a988-00224800c719&viewType=4230")
-wait.until(EC.text_to_be_present_in_element((By.XPATH, "/html/body/div[2]/div/div[4]/div[2]/div/div/div/div/div[2]/div/section/div[3]/div/div[2]/div[2]/div/div/span"), " of "))
-found_string = str(driver.find_element_by_xpath("/html/body/div[2]/div/div[4]/div[2]/div/div/div/div/div[2]/div/section/div[3]/div/div[2]/div[2]/div/div/span").text).split()
-HolderAnalysis_Data_Destruction4 = found_string[4]
+HolderAnalysis_Data_Destruction1 = AFException("https://hscic365.crm11.dynamics.com/main.aspx?app=d365default&forceUCI=1&pagetype=entitylist&etn=cps_application&viewid=4c951b2a-a566-e911-a98a-00224800c940&viewType=4230",
+                                               "/html/body/div[2]/div/div[4]/div[2]/div/div/div/div/div[2]/div/section/div[3]/div/div[2]/div[2]/div/div/span",
+                                               "/html/body/div[2]/div/div[4]/div[2]/div/div/div/div/div[2]/div/section/div[3]/div/div[2]/div[2]/div/div/span")
 
-driver.get("https://hscic365.crm11.dynamics.com/main.aspx?app=d365default&forceUCI=1&pagetype=entitylist&etn=cps_application&viewid=0102d6bf-7822-ea11-a810-000d3a86d801&viewType=4230")
-wait.until(EC.text_to_be_present_in_element((By.XPATH, "/html/body/div[2]/div/div[4]/div[2]/div/div/div/div/div[2]/div/section/div[3]/div/div[2]/div[2]/div/div/span"), " of "))
-found_string = str(driver.find_element_by_xpath("/html/body/div[2]/div/div[4]/div[2]/div/div/div/div/div[2]/div/section/div[3]/div/div[2]/div[2]/div/div/span").text).split()
-HolderAnalysis_Data_Destruction5 = found_string[4]
+HolderAnalysis_Data_Destruction2 = AFException("https://hscic365.crm11.dynamics.com/main.aspx?app=d365default&forceUCI=1&pagetype=entitylist&etn=cps_application&viewid=d330fc0f-986a-e911-a98c-00224800cf35&viewType=4230",
+                                                 "/html/body/div[2]/div/div[4]/div[2]/div/div/div/div/div[2]/div/section/div[3]/div/div[2]/div[2]/div/div/span",
+                                                 "/html/body/div[2]/div/div[4]/div[2]/div/div/div/div/div[2]/div/section/div[3]/div/div[2]/div[2]/div/div/span")
 
-driver.get("https://hscic365.crm11.dynamics.com/main.aspx?app=d365default&forceUCI=1&pagetype=entitylist&etn=queueitem&viewid=34d9b8fc-84c8-e811-a9dd-000d3a2bb190&viewType=4230")
-wait.until(EC.text_to_be_present_in_element((By.XPATH, "/html/body/div[2]/div/div[4]/div[2]/div/div/div/div/div[2]/div/section/div[3]/div/div[2]/div[2]/div/div/span"), " of "))
-found_string = str(driver.find_element_by_xpath("/html/body/div[2]/div/div[4]/div[2]/div/div/div/div/div[2]/div/section/div[3]/div/div[2]/div[2]/div/div/span").text).split()
-VH_DARS_Queue_Items = found_string[4]
+HolderAnalysis_Data_Destruction3 = AFException("https://hscic365.crm11.dynamics.com/main.aspx?app=d365default&forceUCI=1&pagetype=entitylist&etn=cps_application&viewid=8744b1b6-8f6a-e911-a98c-00224800cf35&viewType=4230",
+                                               "/html/body/div[2]/div/div[4]/div[2]/div/div/div/div/div[2]/div/section/div[3]/div/div[2]/div[2]/div/div/span",
+                                               "/html/body/div[2]/div/div[4]/div[2]/div/div/div/div/div[2]/div/section/div[3]/div/div[2]/div[2]/div/div/span")
 
-driver.get("https://hscic365.crm11.dynamics.com/main.aspx?app=d365default&forceUCI=1&pagetype=entitylist&etn=cps_application&viewid=8d222296-fc7d-e911-a98a-00224800c940&viewType=4230")
-wait.until(EC.text_to_be_present_in_element((By.XPATH, "/html/body/div[2]/div/div[4]/div[2]/div/div/div/div/div[2]/div/section/div[3]/div/div[2]/div[2]/div/div[1]/span"), " of "))
-found_string = str(driver.find_element_by_xpath("/html/body/div[2]/div/div[4]/div[2]/div/div/div/div/div[2]/div/section/div[3]/div/div[2]/div[2]/div/div[1]/span").text).split()
-HolderAnalysis_DSA_Financial_YTD = found_string[4]
+HolderAnalysis_Data_Destruction4 = AFException("https://hscic365.crm11.dynamics.com/main.aspx?app=d365default&forceUCI=1&pagetype=entitylist&etn=cps_application&viewid=a2a4f834-3668-e911-a988-00224800c719&viewType=4230",
+                                               "/html/body/div[2]/div/div[4]/div[2]/div/div/div/div/div[2]/div/section/div[3]/div/div[2]/div[2]/div/div/span",
+                                               "/html/body/div[2]/div/div[4]/div[2]/div/div/div/div/div[2]/div/section/div[3]/div/div[2]/div[2]/div/div/span")
 
-driver.get("https://hscic365.crm11.dynamics.com/main.aspx?app=d365default&forceUCI=1&pagetype=entitylist&etn=cps_application&viewid=4f474203-bfd0-e911-a813-000d3a86d6fd&viewType=4230")
-wait.until(EC.text_to_be_present_in_element((By.XPATH, "/html/body/div[2]/div/div[4]/div[2]/div/div/div/div/div[2]/div/section/div[3]/div/div[2]/div[2]/div/div/span"), " of "))
-found_string = str(driver.find_element_by_xpath("/html/body/div[2]/div/div[4]/div[2]/div/div/div/div/div[2]/div/section/div[3]/div/div[2]/div[2]/div/div/span").text).split()
-HolderAnalysis_DSA_Financial_YTD_NewDSA = found_string[4]
+HolderAnalysis_Data_Destruction5 = AFException("https://hscic365.crm11.dynamics.com/main.aspx?app=d365default&forceUCI=1&pagetype=entitylist&etn=cps_application&viewid=0102d6bf-7822-ea11-a810-000d3a86d801&viewType=4230",
+                                               "/html/body/div[2]/div/div[4]/div[2]/div/div/div/div/div[2]/div/section/div[3]/div/div[2]/div[2]/div/div/span",
+                                               "/html/body/div[2]/div/div[4]/div[2]/div/div/div/div/div[2]/div/section/div[3]/div/div[2]/div[2]/div/div/span")
 
-driver.get("https://hscic365.crm11.dynamics.com/main.aspx?app=d365default&forceUCI=1&pagetype=entitylist&etn=account&viewid=4ccb5865-b7d3-e911-a813-000d3a86d68d&viewType=4230")
-wait.until(EC.text_to_be_present_in_element((By.XPATH, "/html/body/div[2]/div/div[4]/div[2]/div/div/div/div/div[2]/div/section/div[3]/div/div[2]/div[2]/div/div[1]/span"), " of "))
-found_string = str(driver.find_element_by_xpath("/html/body/div[2]/div/div[4]/div[2]/div/div/div/div/div[2]/div/section/div[3]/div/div[2]/div[2]/div/div[1]/span").text).split()
-HolderAnalysis_Org_DSA_Signed_Financial_YTD = found_string[4]
+VH_DARS_Queue_Items = AFException("https://hscic365.crm11.dynamics.com/main.aspx?app=d365default&forceUCI=1&pagetype=entitylist&etn=queueitem&viewid=34d9b8fc-84c8-e811-a9dd-000d3a2bb190&viewType=4230",
+                                  "/html/body/div[2]/div/div[4]/div[2]/div/div/div/div/div[2]/div/section/div[3]/div/div[2]/div[2]/div/div/span",
+                                  "/html/body/div[2]/div/div[4]/div[2]/div/div/div/div/div[2]/div/section/div[3]/div/div[2]/div[2]/div/div/span")
 
-driver.get("https://hscic365.crm11.dynamics.com/main.aspx?app=d365default&forceUCI=1&pagetype=entitylist&etn=cps_applicationholderdsa&viewid=09252713-8811-e811-8128-70106fa55dc1&viewType=4230")
-wait.until(EC.text_to_be_present_in_element((By.XPATH, "/html/body/div[2]/div/div[4]/div[2]/div/div/div/div/div[2]/div/section/div[3]/div/div[2]/div[2]/div/div/span"), " of "))
-found_string = str(driver.find_element_by_xpath("/html/body/div[2]/div/div[4]/div[2]/div/div/div/div/div[2]/div/section/div[3]/div/div[2]/div[2]/div/div/span").text).split()
-Outstanding_Triage = found_string[4]
+HolderAnalysis_DSA_Financial_YTD = AFException("https://hscic365.crm11.dynamics.com/main.aspx?app=d365default&forceUCI=1&pagetype=entitylist&etn=cps_application&viewid=8d222296-fc7d-e911-a98a-00224800c940&viewType=4230",
+                                               "/html/body/div[2]/div/div[4]/div[2]/div/div/div/div/div[2]/div/section/div[3]/div/div[2]/div[2]/div/div[1]/span",
+                                               "/html/body/div[2]/div/div[4]/div[2]/div/div/div/div/div[2]/div/section/div[3]/div/div[2]/div[2]/div/div[1]/span")
 
-driver.get("https://hscic365.crm11.dynamics.com/main.aspx?app=d365default&forceUCI=1&pagetype=entitylist&etn=cps_applicationholderdsa&viewid=220d137d-ba33-ea11-a813-000d3a86d535&viewType=4230")
-wait.until(EC.text_to_be_present_in_element((By.XPATH, "/html/body/div[2]/div/div[4]/div[2]/div/div/div/div/div[2]/div/section/div[3]/div/div[2]/div[2]/div/div/span"), " of "))
-found_string = str(driver.find_element_by_xpath("/html/body/div[2]/div/div[4]/div[2]/div/div/div/div/div[2]/div/section/div[3]/div/div[2]/div[2]/div/div/span").text).split()
-Outstanding_Triage_CCG = found_string[4]
+HolderAnalysis_DSA_Financial_YTD_NewDSA = AFException("https://hscic365.crm11.dynamics.com/main.aspx?app=d365default&forceUCI=1&pagetype=entitylist&etn=cps_application&viewid=4f474203-bfd0-e911-a813-000d3a86d6fd&viewType=4230",
+                                                      "/html/body/div[2]/div/div[4]/div[2]/div/div/div/div/div[2]/div/section/div[3]/div/div[2]/div[2]/div/div/span",
+                                                      "/html/body/div[2]/div/div[4]/div[2]/div/div/div/div/div[2]/div/section/div[3]/div/div[2]/div[2]/div/div/span")
+
+HolderAnalysis_Org_DSA_Signed_Financial_YTD = AFException("https://hscic365.crm11.dynamics.com/main.aspx?app=d365default&forceUCI=1&pagetype=entitylist&etn=account&viewid=4ccb5865-b7d3-e911-a813-000d3a86d68d&viewType=4230",
+                                                          "/html/body/div[2]/div/div[4]/div[2]/div/div/div/div/div[2]/div/section/div[3]/div/div[2]/div[2]/div/div[1]/span",
+                                                          "/html/body/div[2]/div/div[4]/div[2]/div/div/div/div/div[2]/div/section/div[3]/div/div[2]/div[2]/div/div[1]/span")
+
+Outstanding_Triage = AFException("https://hscic365.crm11.dynamics.com/main.aspx?app=d365default&forceUCI=1&pagetype=entitylist&etn=cps_applicationholderdsa&viewid=09252713-8811-e811-8128-70106fa55dc1&viewType=4230",
+                                 "/html/body/div[2]/div/div[4]/div[2]/div/div/div/div/div[2]/div/section/div[3]/div/div[2]/div[2]/div/div/span",
+                                 "/html/body/div[2]/div/div[4]/div[2]/div/div/div/div/div[2]/div/section/div[3]/div/div[2]/div[2]/div/div/span")
+
+Outstanding_Triage_CCG = AFException("https://hscic365.crm11.dynamics.com/main.aspx?app=d365default&forceUCI=1&pagetype=entitylist&etn=cps_applicationholderdsa&viewid=220d137d-ba33-ea11-a813-000d3a86d535&viewType=4230",
+                                     "/html/body/div[2]/div/div[4]/div[2]/div/div/div/div/div[2]/div/section/div[3]/div/div[2]/div[2]/div/div/span",
+                                     "/html/body/div[2]/div/div[4]/div[2]/div/div/div/div/div[2]/div/section/div[3]/div/div[2]/div[2]/div/div/span")
 
 # Start of PowerBI reports
 # Pretty difficult and can require lots of trial & error as well as potential time.sleep() to make sure all data is loaded
@@ -294,8 +262,13 @@ Open_at_1c = found_string[0]
 # Thankfully due to us only needing the 2nd last  value, we can use a shortcut of CTRL + DOWN ARROW to automatically go to the last result after clicking into the excel file
 # Thus the 'ewrch-row-nosel ewrch-row-pre-cellsel' which only refers to the element before the one selected (last in this case) is the number we want
 
-driver.get("https://hscic365.crm11.dynamics.com/main.aspx?app=d365default&forceUCI=1&pagetype=entitylist&etn=cps_file&viewid=b536c135-f481-e911-a98d-00224800bb9b&viewType=4230")
-wait.until(EC.presence_of_element_located((By.XPATH,"/html/body/div[2]/div/div[4]/div[2]/div/div/div/div/div[2]/div/section/div[3]/div/div[2]/div[2]/div/div[1]/span")))
+try:
+    driver.get("https://hscic365.crm11.dynamics.com/main.aspx?app=d365default&forceUCI=1&pagetype=entitylist&etn=cps_file&viewid=b536c135-f481-e911-a98d-00224800bb9b&viewType=4230")
+    wait.until(EC.text_to_be_present_in_element((By.XPATH, "/html/body/div[2]/div/div[4]/div[2]/div/div/div/div/div[2]/div/section/div[1]/div/div/ul/li[8]/div/ul/button/span/span[2]"), "Export to Excel"))
+except TimeoutException:
+    driver.get("https://hscic365.crm11.dynamics.com/main.aspx?app=d365default&forceUCI=1&pagetype=entitylist&etn=cps_file&viewid=b536c135-f481-e911-a98d-00224800bb9b&viewType=4230")
+    wait.until(EC.text_to_be_present_in_element((By.XPATH, "/html/body/div[2]/div/div[4]/div[2]/div/div/div/div/div[2]/div/section/div[1]/div/div/ul/li[8]/div/ul/button/span/span[2]"), "Export to Excel"))
+
 driver.find_element_by_xpath("/html/body/div[2]/div/div[4]/div[2]/div/div/div/div/div[2]/div/section/div[1]/div/div/ul/li[8]/div/ul/li/button").click()
 wait.until(EC.presence_of_element_located((By.XPATH, "/html/body/div[7]/div/div/ul/li[1]/ul/li[1]/button")))
 driver.find_element_by_xpath("/html/body/div[7]/div/div/ul/li[1]/ul/li[1]/button").click()
@@ -315,10 +288,27 @@ driver.quit()  # Closes selenium chrome driver
 
 # Here is where the Excel starts using Win32 to directly access the Excel functions
 
-excel = win32.dynamic.Dispatch('Excel.Application')  # Opens up excel
-excel.Visible = True  # Makes excel visible, this can be changed to false if you dont want it to pop up
+try:
+    excel = win32.gencache.EnsureDispatch('Excel.Application')
+except AttributeError:
+    # Corner case dependencies.
+    import os
+    import re
+    import sys
+    import shutil
+    # Remove cache and try again.
+    MODULE_LIST = [m.__name__ for m in sys.modules.values()]
+    for module in MODULE_LIST:
+        if re.match(r'win32com\.gen_py\..+', module):
+            del sys.modules[module]
+    shutil.rmtree(os.path.join(os.environ.get('LOCALAPPDATA'), 'Temp', 'gen_py'))
+    from win32com import client
+    excel = win32.gencache.EnsureDispatch('Excel.Application')
 
-file = 'C:/Users/Rashad/Documents/Python Projects/Automate_Friday/Test_Book.xlsx'  # Location of the automation book
+# excel = win32.gencache.EnsureDispatch('Excel.Application')  # Opens up excel
+excel.Visible = True  # Makes excel visible, this can be changed to false if you don't want it to pop up
+
+file = "https://hscic365.sharepoint.com/sites/DDS/Delivering%20Data%20Access%20Online/CRM_Migration/AutofillBook.xlsx?web=1"  # Location of the automation book
 wb = excel.Workbooks.Open(file)
 ws = wb.Worksheets('Total_Apps_AutoFill')  # After opening the file as wb (workbook) you now go to individual worksheets
 
@@ -392,7 +382,7 @@ ws.Range("A13:A13").EntireRow.Insert()
 ws.Range("A15:O14").AutoFill(ws.Range("A15:O13"), win32.constants.xlFillDefault)
 
 wb.Save()  # Saves workbook
-wb.Close()  # Closes workbook, can be commented out if you want to have a look
-excel.Application.Quit()
+# wb.Close()  # Closes workbook, can be commented out if you want to have a look
+# excel.Application.Quit()
 
-print("yum")
+print("Script successfully completed - check HolderAnalysis_v27_auto")
