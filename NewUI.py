@@ -9,9 +9,9 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium import webdriver
-from easygui import *
 import win32com.client as win32
 import time
+import datetime
 from selenium.common.exceptions import TimeoutException
 
 
@@ -22,17 +22,26 @@ options.add_argument("--start-maximized")    # adding option to make chrome maxi
 driver = webdriver.Chrome(chrome_options=options, executable_path="chromedriver.exe")   # using the local chromedriver as the selenium driver
 
 
-wait = WebDriverWait(driver, 30)        # defining how long to wait for something to appear, can be changed but usually 20 seconds is enough for crm/powerbi being slow
+wait = WebDriverWait(driver, 40)        # defining how long to wait for something to appear, can be changed but usually 20 seconds is enough for crm/powerbi being slow
 
 # Takes you to the home of CRM which then asks you to login
 driver.get("https://hscic365.crm11.dynamics.com/main.aspx?app=d365default&forceUCI=1&pagetype=dashboard&id=063e7659-05d9-4030-960d-10fe269a5a8b&type=system&_canOverride=true")
-
+wait.until(EC.presence_of_element_located((By.ID, "idSIButton9")))
+driver.find_element_by_id("i0116").send_keys("chole@hscic.gov.uk")
+driver.find_element_by_xpath("//*[@id='idSIButton9']").click()
+wait.until(EC.presence_of_element_located((By.XPATH, "//*[contains(@ID, 'sitemap-entity-Home')]")))
 # Grabbing numbers
+#
 
-driver.get("https://hscic365.crm11.dynamics.com/crmreports/viewer/viewer.aspx?action=filter&id=9d3b28aa-ad14-e911-a9e2-000d3a2bb31e&helpID=DARS-ProcessStage_v5new.rdl")
+try:
+    driver.get("https://hscic365.crm11.dynamics.com/crmreports/viewer/viewer.aspx?action=filter&id=9d3b28aa-ad14-e911-a9e2-000d3a2bb31e&helpID=DARS-ProcessStage_v5new.rdl")
 
-# this is called an iframe, it is basically a separate self contained window inside the the webpage which needs to be switched to as it's not part of the main HTML
-wait.until(EC.frame_to_be_available_and_switch_to_it((By.NAME, 'resultFrame')))
+    # this is called an iframe, it is basically a separate self contained window inside the the webpage which needs to be switched to as it's not part of the main HTML
+
+    wait.until(EC.frame_to_be_available_and_switch_to_it((By.NAME, 'resultFrame')))
+except TimeoutException:
+    driver.get("https://hscic365.crm11.dynamics.com/crmreports/viewer/viewer.aspx?action=filter&id=9d3b28aa-ad14-e911-a9e2-000d3a2bb31e&helpID=DARS-ProcessStage_v5new.rdl")
+    wait.until(EC.frame_to_be_available_and_switch_to_it((By.NAME, 'resultFrame')))
 
 # this is using something called an XPATH which is basically directly pointing at that exact value on the webpage with no regard as to what it may be
 # it isn't ideal but in most of the cases here, the only way to do it
@@ -59,8 +68,13 @@ DARS_Summary_OpenByStage_Subtotal_CCG = driver.find_element_by_xpath("//div[cont
 DARS_Summary_OpenByStage_Subtotal_Breach_CCG = driver.find_element_by_xpath("//div[contains(@id, '2_67iT0R0x0C0x1_aria')]/div[1]").get_attribute('innerHTML')
 DARS_Summary_OpenByStage_Total_Breach_CCG = driver.find_element_by_xpath("//div[contains(@id, '_2_85iT0C0x1_aria')]/div[1]").get_attribute('innerHTML')
 
-driver.get("https://hscic365.crm11.dynamics.com/crmreports/viewer/viewer.aspx?action=filter&id=2242ce07-bac0-e811-a9d8-000d3a2bbda1&helpID=DARS-OpenAndClosuresWeeklySummary_v3new.rdl")
-wait.until(EC.frame_to_be_available_and_switch_to_it((By.NAME, 'resultFrame')))
+try:
+    driver.get("https://hscic365.crm11.dynamics.com/crmreports/viewer/viewer.aspx?action=filter&id=2242ce07-bac0-e811-a9d8-000d3a2bbda1&helpID=DARS-OpenAndClosuresWeeklySummary_v3new.rdl")
+    wait.until(EC.frame_to_be_available_and_switch_to_it((By.NAME, 'resultFrame')))
+except TimeoutException:
+    driver.get("https://hscic365.crm11.dynamics.com/crmreports/viewer/viewer.aspx?action=filter&id=2242ce07-bac0-e811-a9d8-000d3a2bbda1&helpID=DARS-OpenAndClosuresWeeklySummary_v3new.rdl")
+    wait.until(EC.frame_to_be_available_and_switch_to_it((By.NAME, 'resultFrame')))
+
 wait.until(EC.presence_of_element_located((By.XPATH, "//div[contains(@id, '_1_71iT1R0R0R0x0_aria')]/div[1]")))
 
 DARS_OpenClosures_Triage_Failures = driver.find_element_by_xpath("//div[contains(@id, '_1_71iT1R0R0R0x0_aria')]/div[1]").get_attribute('innerHTML')
@@ -79,14 +93,23 @@ DARS_OpenClosures_Applications_Accepted_CCG = driver.find_element_by_xpath("//di
 DARS_OpenClosures_Signed_DSA_CCG = driver.find_element_by_xpath("//div[contains(@id, '_2_79iT1R0R0R0x0_aria')]/div[1]").get_attribute('innerHTML')
 DARS_OpenClosures_Submissions_CCG = driver.find_element_by_xpath("//div[contains(@id, '_2_83iT1R0R0R0x0_aria')]/div[1]").get_attribute('innerHTML')
 
-driver.get("https://hscic365.crm11.dynamics.com/crmreports/viewer/viewer.aspx?action=filter&id=f380b8bd-c6b1-e811-a9d6-000d3a2bb91c&helpID=DARS-AverageSLA_v3new.rdl")
-wait.until(EC.frame_to_be_available_and_switch_to_it((By.NAME, 'resultFrame')))
-wait.until(EC.presence_of_element_located((By.ID, "reportViewer_ctl08_ctl04_ctl01")))
-driver.find_element_by_id("reportViewer_ctl08_ctl04_ctl01").click()
-driver.find_element_by_id("reportViewer_ctl08_ctl04_divDropDown_ctl00").click()
-driver.find_element_by_id("reportViewer_ctl08_ctl00").click()
+try:
+    driver.get("https://hscic365.crm11.dynamics.com/crmreports/viewer/viewer.aspx?action=filter&id=f380b8bd-c6b1-e811-a9d6-000d3a2bb91c&helpID=DARS-AverageSLA_v3new.rdl")
+    wait.until(EC.frame_to_be_available_and_switch_to_it((By.NAME, 'resultFrame')))
+    wait.until(EC.presence_of_element_located((By.ID, "reportViewer_ctl08_ctl04_ctl01")))
+    driver.find_element_by_id("reportViewer_ctl08_ctl04_ctl01").click()
+    driver.find_element_by_id("reportViewer_ctl08_ctl04_divDropDown_ctl00").click()
+    driver.find_element_by_id("reportViewer_ctl08_ctl00").click()
+    wait.until(EC.presence_of_element_located((By.XPATH, "//div[contains(@id, '_1_55iT0_aria')]/div[1]")))
+except TimeoutException:
+    driver.get("https://hscic365.crm11.dynamics.com/crmreports/viewer/viewer.aspx?action=filter&id=f380b8bd-c6b1-e811-a9d6-000d3a2bb91c&helpID=DARS-AverageSLA_v3new.rdl")
+    wait.until(EC.frame_to_be_available_and_switch_to_it((By.NAME, 'resultFrame')))
+    wait.until(EC.presence_of_element_located((By.ID, "reportViewer_ctl08_ctl04_ctl01")))
+    driver.find_element_by_id("reportViewer_ctl08_ctl04_ctl01").click()
+    driver.find_element_by_id("reportViewer_ctl08_ctl04_divDropDown_ctl00").click()
+    driver.find_element_by_id("reportViewer_ctl08_ctl00").click()
+    wait.until(EC.presence_of_element_located((By.XPATH, "//div[contains(@id, '_1_55iT0_aria')]/div[1]")))
 
-wait.until(EC.presence_of_element_located((By.XPATH, "//div[contains(@id, '_1_55iT0_aria')]/div[1]")))
 Combined_Mean_Working_Days = driver.find_element_by_xpath("//div[contains(@id, '_1_55iT0_aria')]/div[1]").get_attribute('innerHTML')
 
 driver.find_element_by_id("reportViewer_ctl08_ctl04_ctl01").click()
@@ -163,16 +186,29 @@ Outstanding_Triage_CCG = AFException("https://hscic365.crm11.dynamics.com/main.a
 # Waits for a bottom right total to be found in the text implying it is all loaded then grabs information
 # Like previous advanced finds, if the wait.until is not sufficiently late enough, a sleep will be needed to make sure data is loaded before assigning values
 
-driver.get("https://app.powerbi.com/groups/7e8fcf98-1b8e-47e4-a10d-4bbd0e9f425c/reports/0598e40d-8edd-43a9-91bf-e83f36ac9214/ReportSectiond29fad801f74e3f6bf8c")
+try:
+    driver.get("https://app.powerbi.com/groups/7e8fcf98-1b8e-47e4-a10d-4bbd0e9f425c/reports/0598e40d-8edd-43a9-91bf-e83f36ac9214/ReportSectiond29fad801f74e3f6bf8c")
 
-wait.until(EC.text_to_be_present_in_element((By.XPATH, "/html/body/div[1]/root/mat-sidenav-container/mat-sidenav"
+    wait.until(EC.text_to_be_present_in_element((By.XPATH, "/html/body/div[1]/root/mat-sidenav-container/mat-sidenav"
                                                        "-content/div/div/report/exploration-container/exploration"
                                                        "-container-modern/div/div/div/exploration-host/div/div"
                                                        "/exploration/div/explore-canvas-modern/div/div[2]/div/div["
                                                        "2]/div[2]/visual-container-repeat/visual-container-modern["
                                                        "2]/transform/div/div[3]/div/visual-modern/div/div/div["
                                                        "2]/div[1]/div[5]/div/div"), "Total"))
+except TimeoutException:
+    driver.get(
+        "https://app.powerbi.com/groups/7e8fcf98-1b8e-47e4-a10d-4bbd0e9f425c/reports/0598e40d-8edd-43a9-91bf-e83f36ac9214/ReportSectiond29fad801f74e3f6bf8c")
 
+    wait.until(EC.text_to_be_present_in_element((By.XPATH, "/html/body/div[1]/root/mat-sidenav-container/mat-sidenav"
+                                                           "-content/div/div/report/exploration-container/exploration"
+                                                           "-container-modern/div/div/div/exploration-host/div/div"
+                                                           "/exploration/div/explore-canvas-modern/div/div[2]/div/div["
+                                                           "2]/div[2]/visual-container-repeat/visual-container-modern["
+                                                           "2]/transform/div/div[3]/div/visual-modern/div/div/div["
+                                                           "2]/div[1]/div[5]/div/div"), "Total"))
+
+time.sleep(2)
 Email_Tracked_To_Holder = driver.find_element_by_xpath("/html/body/div[1]/root/mat-sidenav-container/mat-sidenav"
                                                        "-content/div/div/report/exploration-container/exploration"
                                                        "-container-modern/div/div/div/exploration-host/div/div"
@@ -251,11 +287,22 @@ Average_Age_Not_Attached_To_Holder = driver.find_element_by_xpath("/html/body/di
 # so you can hit run and just walk off for a bit
 # Here we get lucky because the CSS selector of the count card is just 'card' which makes referring to it easier
 # Unfortunately it contains no text and only innerHTML so the previous EC cannot be used so a sleep must be used
-driver.get("https://app.powerbi.com/groups/7e6fa73a-fc03-421c-8de9-e405f86dc62f/reports/53ef3e82-3680-457e-9027-7942c75dca2a/ReportSection")
-wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, '.card')))
-time.sleep(1)
-found_string = str(driver.find_element_by_css_selector('.card').text).split()
-Open_at_1c = found_string[0]
+try:
+    driver.get("https://app.powerbi.com/groups/7e6fa73a-fc03-421c-8de9-e405f86dc62f/reports/53ef3e82-3680-457e-9027-7942c75dca2a/ReportSection")
+    wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, '.card')))
+except TimeoutException:
+    driver.get("https://app.powerbi.com/groups/7e6fa73a-fc03-421c-8de9-e405f86dc62f/reports/53ef3e82-3680-457e-9027-7942c75dca2a/ReportSection")
+    wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, '.card')))
+time.sleep(5)
+found_string = str(driver.find_element_by_xpath("/html/body/div[1]/root/mat-sidenav-container/mat-sidenav-content/div/div/report/e"
+                                                "xploration-container/exploration-container-modern/div/div/div/exploration-host/div/"
+                                                "div/exploration/div/explore-canvas-modern/div/div[2]/div/div[2]/div[2]/visual-contai"
+                                                "ner-repeat/visual-container-modern[1]/transform/div/div[3]/div/visual-modern/div").get_attribute('innerHTML')).split()
+found_string2 = found_string[8].split(".")
+if found_string2[0] == "(Blank)" :
+    Open_at_1c = 0
+else:
+    Open_at_1c = found_string2[0]
 
 # This is a nice solution to the 5000+ excel one by using online excel
 # Online excel also acts like an iframe, except information is only loaded if it's on screen
@@ -264,17 +311,23 @@ Open_at_1c = found_string[0]
 
 try:
     driver.get("https://hscic365.crm11.dynamics.com/main.aspx?app=d365default&forceUCI=1&pagetype=entitylist&etn=cps_file&viewid=b536c135-f481-e911-a98d-00224800bb9b&viewType=4230")
-    wait.until(EC.text_to_be_present_in_element((By.XPATH, "/html/body/div[2]/div/div[4]/div[2]/div/div/div/div/div[2]/div/section/div[1]/div/div/ul/li[8]/div/ul/button/span/span[2]"), "Export to Excel"))
+    wait.until(EC.text_to_be_present_in_element((By.XPATH,"/html/body/div[2]/div/div[4]/div[2]/div/div/div/div/div[2]/div/section/div[1]/div/div/ul/li[8]/div/ul/button/span/span[2]"), "Export to Excel"))
+    driver.find_element_by_xpath("/html/body/div[2]/div/div[4]/div[2]/div/div/div/div/div[2]/div/section/div[1]/div/div/ul/li[8]/div/ul/li/button").click()
+    wait.until(EC.presence_of_element_located((By.XPATH, "/html/body/div[7]/div/div/ul/li[1]/ul/li[1]/button")))
+    driver.find_element_by_xpath("/html/body/div[7]/div/div/ul/li[1]/ul/li[1]/button").click()
+    wait.until(EC.frame_to_be_available_and_switch_to_it((By.NAME, 'wopi_frame')))
+    wait.until(EC.presence_of_element_located((By.XPATH, "//*[contains(@class, 'ewrch-row-cellsel')]")))
+    driver.find_element_by_xpath("//*[contains(@class, 'ewrch-row-cellsel')]").click()
 except TimeoutException:
     driver.get("https://hscic365.crm11.dynamics.com/main.aspx?app=d365default&forceUCI=1&pagetype=entitylist&etn=cps_file&viewid=b536c135-f481-e911-a98d-00224800bb9b&viewType=4230")
-    wait.until(EC.text_to_be_present_in_element((By.XPATH, "/html/body/div[2]/div/div[4]/div[2]/div/div/div/div/div[2]/div/section/div[1]/div/div/ul/li[8]/div/ul/button/span/span[2]"), "Export to Excel"))
+    wait.until(EC.text_to_be_present_in_element((By.XPATH,"/html/body/div[2]/div/div[4]/div[2]/div/div/div/div/div[2]/div/section/div[1]/div/div/ul/li[8]/div/ul/button/span/span[2]"),"Export to Excel"))
+    driver.find_element_by_xpath("/html/body/div[2]/div/div[4]/div[2]/div/div/div/div/div[2]/div/section/div[1]/div/div/ul/li[8]/div/ul/li/button").click()
+    wait.until(EC.presence_of_element_located((By.XPATH, "/html/body/div[7]/div/div/ul/li[1]/ul/li[1]/button")))
+    driver.find_element_by_xpath("/html/body/div[7]/div/div/ul/li[1]/ul/li[1]/button").click()
+    wait.until(EC.frame_to_be_available_and_switch_to_it((By.NAME, 'wopi_frame')))
+    wait.until(EC.presence_of_element_located((By.XPATH, "//*[contains(@class, 'ewrch-row-cellsel')]")))
+    driver.find_element_by_xpath("//*[contains(@class, 'ewrch-row-cellsel')]").click()
 
-driver.find_element_by_xpath("/html/body/div[2]/div/div[4]/div[2]/div/div/div/div/div[2]/div/section/div[1]/div/div/ul/li[8]/div/ul/li/button").click()
-wait.until(EC.presence_of_element_located((By.XPATH, "/html/body/div[7]/div/div/ul/li[1]/ul/li[1]/button")))
-driver.find_element_by_xpath("/html/body/div[7]/div/div/ul/li[1]/ul/li[1]/button").click()
-wait.until(EC.frame_to_be_available_and_switch_to_it((By.NAME, 'wopi_frame')))
-wait.until(EC.presence_of_element_located((By.XPATH, "//*[contains(@class, 'ewrch-row-cellsel')]")))
-driver.find_element_by_xpath("//*[contains(@class, 'ewrch-row-cellsel')]").click()
 actions = ActionChains(driver)
 actions.key_down(Keys.LEFT_CONTROL)
 actions.send_keys(Keys.ARROW_DOWN)
@@ -286,26 +339,23 @@ HolderAnalysis_DataDisseminationsFinancialYTD = driver.find_element_by_xpath("//
 
 driver.quit()  # Closes selenium chrome driver
 
+today = datetime.datetime.now()
+today = today.strftime("%x")
 # Here is where the Excel starts using Win32 to directly access the Excel functions
 
-try:
-    excel = win32.gencache.EnsureDispatch('Excel.Application')
-except AttributeError:
-    # Corner case dependencies.
-    import os
-    import re
-    import sys
-    import shutil
-    # Remove cache and try again.
-    MODULE_LIST = [m.__name__ for m in sys.modules.values()]
-    for module in MODULE_LIST:
-        if re.match(r'win32com\.gen_py\..+', module):
-            del sys.modules[module]
-    shutil.rmtree(os.path.join(os.environ.get('LOCALAPPDATA'), 'Temp', 'gen_py'))
-    from win32com import client
-    excel = win32.gencache.EnsureDispatch('Excel.Application')
+# This is to delete and regenerate the cache everytime
+# Corner case dependencies.
+import os
+import re
+import sys
+import shutil
+MODULE_LIST = [m.__name__ for m in sys.modules.values()]
+for module in MODULE_LIST:
+    if re.match(r'win32com\.gen_py\..+', module):
+        del sys.modules[module]
+shutil.rmtree(os.path.join(os.environ.get('LOCALAPPDATA'), 'Temp', 'gen_py'))
+excel = win32.gencache.EnsureDispatch('Excel.Application')
 
-# excel = win32.gencache.EnsureDispatch('Excel.Application')  # Opens up excel
 excel.Visible = True  # Makes excel visible, this can be changed to false if you don't want it to pop up
 
 file = "https://hscic365.sharepoint.com/sites/DDS/Delivering%20Data%20Access%20Online/CRM_Migration/AutofillBook.xlsx?web=1"  # Location of the automation book
@@ -313,7 +363,8 @@ wb = excel.Workbooks.Open(file)
 ws = wb.Worksheets('Total_Apps_AutoFill')  # After opening the file as wb (workbook) you now go to individual worksheets
 
 ws.Range("A16:A16").EntireRow.Insert()  # Goes to A16 and just inserts a new row
-ws.Range("A18:A17").AutoFill(ws.Range("A18:A16"), win32.constants.xlFillDefault)  # Formula so just pulled up from 2 cells below as autofill
+ws.Cells(16, 1).Value = today # Inserts todays date into cell
+# ws.Range("A18:A17").AutoFill(ws.Range("A18:A16"), win32.constants.xlFillDefault)  # Formula so just pulled up from 2 cells below as autofill
 ws.Range("E18:E17").AutoFill(ws.Range("E18:E16"), win32.constants.xlFillDefault)
 ws.Range("F18:F17").AutoFill(ws.Range("F18:F16"), win32.constants.xlFillDefault)
 ws.Range("Q18:Q17").AutoFill(ws.Range("Q18:Q16"), win32.constants.xlFillDefault)
@@ -347,7 +398,8 @@ ws.Cells(16, 31).Value = Data_Production_Email_Count
 ws = wb.Worksheets('Total_Apps_CCG_AutoFill')  # Again switching worksheet and repeating
 
 ws.Range("A13:A13").EntireRow.Insert()
-ws.Range("A15:A14").AutoFill(ws.Range("A15:A13"), win32.constants.xlFillDefault)
+ws.Cells(13, 1).Value = today
+# ws.Range("A15:A14").AutoFill(ws.Range("A15:A13"), win32.constants.xlFillDefault)
 ws.Range("M15:M14").AutoFill(ws.Range("M15:M13"), win32.constants.xlFillDefault)
 ws.Range("S15:S14").AutoFill(ws.Range("S15:S13"), win32.constants.xlFillDefault)
 ws.Cells(13, 2).Value = DARS_Summary_OpenByStage_Total_CCG
@@ -365,7 +417,8 @@ ws.Cells(13, 14).Value = round(float(Combined_Mean_Working_Days_CCG))
 ws = wb.Worksheets('Enq_NotAttached_AutoFill')
 
 ws.Range("A44:A44").EntireRow.Insert()
-ws.Range("A46:A45").AutoFill(ws.Range("A46:A44"), win32.constants.xlFillDefault)
+ws.Cells(44, 1).Value = today
+# ws.Range("A46:A45").AutoFill(ws.Range("A46:A44"), win32.constants.xlFillDefault)
 ws.Cells(44, 2).Value = Not_Attached_To_Holder_Count
 ws.Cells(44, 3).Value = round(float(Average_Age_Not_Attached_To_Holder))
 
@@ -379,10 +432,83 @@ ws.Cells(17, 8).Value = HolderAnalysis_DataDisseminationsFinancialYTD
 ws = wb.Worksheets('Total_Apps_Formula_AutoFill')
 
 ws.Range("A13:A13").EntireRow.Insert()
-ws.Range("A15:O14").AutoFill(ws.Range("A15:O13"), win32.constants.xlFillDefault)
+ws.Cells(13, 1).Value = today
+ws.Range("B15:O14").AutoFill(ws.Range("B15:O13"), win32.constants.xlFillDefault)
 
 wb.Save()  # Saves workbook
 # wb.Close()  # Closes workbook, can be commented out if you want to have a look
 # excel.Application.Quit()
 
+print("""/
+                                                                .-'
+                                                         .-'
+                                                      .-'
+                                                   .-'
+                                                .-'
+                  /)                         .-'
+                 ||                       .-'
+                 ||                    .-'
+                 ||                 .-'
+                 ||              .-'     .------.
+                 ||           .-'  __   | *meow* |
+                 ||        .-'   .'-/__ |  _.---'
+                 |`-------------'    \/ /.'
+                 |*                 '| /'
+                 |     |          `--'
+               .-| |  /_______    |
+            .-'  | | <        `.|||               _.'|
+         .-'____  \\`.`.       ||||           _.-'_.-|
+      .-'  ||   `--`- `.).____ ||||       _.-'_.-'   |
+   .-'     ||                 ``-``--._.-'_.-'       |
+.-'        ||                         |`-'           |
+           ||                         | |            |
+           ||                         | |            |
+           ||                         | |            |
+           ||                         | |            |
+           ||                         | |            |
+           ||                        |`--;}};.       |
+           ||                       .'  o\ }}}}      |
+           ||                     .'\      }}}}      |
+           ||                     |      )}}}}}      |
+           ||                      \    '}}}}}       |
+           ||                       L    }}}}}}      |
+           ||                       |  _.}}}}}}      |
+           ||                    .-'|.'.-`-}}}}}     |
+           ||                  .'  |/|/      `.}}    |
+           ||                .' /              \}    |
+           ||               /  |           \    \    |
+           ||              /   |           |\    \   |
+           ||            .'   .'\          | \    \  |
+           ||          .'   .'  |   `      |  \    \ |
+`.         ||        .'   .'    |  CHOLE   |   |    )|
+  `.       ||     .-'\  .'      |   IS     (  /   .' |
+    `.     ||   _/__.'`'        J Awesome  J /   /   |
+      `.   || (')               |           /   /    |
+        `. ||                   F          <   /     |
+          `||                   L        ,/ `./      |
+           ||                   `-.__.---/'_/_/      |
+           ||                   |       //-'|        |
+           ||                   |      //   |        |
+           ||                   |      '    |        |
+           ||                   |           |        |
+           ||                   `-.______.-'         |
+           ||                    |    F    |         |
+           ||                    (   J|    F         |
+           ||                    |   ||   J          |
+           ||                    |   |J(   L         |
+           ||                    J   F|F   |         |
+           ||                    |  J ||   |         |
+           ||                    |  |_||   F         |
+           ||                   _F  J `|  J          |
+           ||               _.-'/_.' ) |  |`.        |
+           ||           _.-' .-'  /\/  |  |. `.      |
+           ||       _.-'     `---'     F  ) `. `.    |
+           ||   _.-'                  /-'/|   `. `.  |
+           ||.-'                    .__.'       `. `.|
+                                                  `. |
+                                                    `|
+                                                      `.
+                                                        `.
+                                                          `.
+    """)
 print("Script successfully completed - check HolderAnalysis_v27_auto")
