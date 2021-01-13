@@ -1,7 +1,7 @@
 # Author: Rashad Basharat
 # Contributions by Lucy Harris
 # Maintained by: Lucy Harris
-# Date Modified: 30/12/2020
+# Date Modified: 13/01/2021
 
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -13,7 +13,7 @@ import win32com.client as win32
 import time
 import datetime
 from selenium.common.exceptions import TimeoutException
-
+from easygui import *
 
 # importing all the necessary libraries and functions
 #
@@ -24,14 +24,40 @@ driver = webdriver.Chrome(chrome_options=options, executable_path="chromedriver.
 
 wait = WebDriverWait(driver, 40)        # defining how long to wait for something to appear, can be changed but usually 20 seconds is enough for crm/powerbi being slow
 
+msg = "Enter shortcode login information"
+title = "Holder Analysis automation login"              # setting up the GUI window
+fieldNames = ["Shortcode Email Address", "Password"]
+fieldValues = []  # we start with blanks for the values
+fieldValues = multpasswordbox(msg, title, fieldNames)
+
 # Takes you to the home of CRM which then asks you to login
-driver.get("https://hscic365.crm11.dynamics.com/main.aspx?app=d365default&forceUCI=1&pagetype=dashboard&id=063e7659-05d9-4030-960d-10fe269a5a8b&type=system&_canOverride=true")
-wait.until(EC.presence_of_element_located((By.ID, "idSIButton9")))
-driver.find_element_by_id("i0116").send_keys("chole@hscic.gov.uk")
-driver.find_element_by_xpath("//*[@id='idSIButton9']").click()
-wait.until(EC.presence_of_element_located((By.XPATH, "//*[contains(@ID, 'sitemap-entity-Home')]")))
+while 1:
+    if fieldValues is None: break           # while loop to make sure all fields have a value in them
+    errmsg = ""
+    for i in range(len(fieldNames)):
+        if fieldValues[i].strip() == "":
+            errmsg = errmsg + ('"%s" is a required field.\n\n' % fieldNames[i])
+    if errmsg == "" : break  # if no problems found
+    fieldValues = multpasswordbox(errmsg, title, fieldNames, fieldValues)
+
+# logging in through going to a generic DARS CRM login link
+driver.get("https://adfs.hscic.gov.uk/adfs/ls/?client-request-id=1c3c0d01-f7f3-4be9-a491-ec618036a275&wa=wsignin1.0&wtre"
+           "alm=urn%3afederation%3aMicrosoftOnline&wctx=LoginOptions%3D3%26estsredirect%3d2%26estsrequest%3drQIIAZVSO2zT"
+           "YBCOm7a0FYWqYmBg6NAyIDn9_Sd-JKISfaRJ09huHKfGXirHj_h34kcc2yGeOjIWgYTEWJg6woJY6NyprB0ZEK8BwQAjjlBZmPh0-nR3Op0-"
+           "3Xd3skSOKC2DP6DxMf8h7TK7RLA4t4DN37314-en3RePvqqH1HF0ggErDP1BaXW157k43mkHWuD0UGwMOhQo5NKCIHL6yFUdpA1ymuesvsaw"
+           "cwz7iGEnEwMqTxcAkS8WqSIgmUKBLOTYrTLBOpzNQTZkkw6UEQBp7dSlHShLjZAVW0AR9x1WFGzWEWyloiDF3u7ylUao2A2CS-c52IJ10XJ4"
+           "SQ4VUbA4pwV4USb5ynbvYuI6vx6FFhyTF6DE-D4xa3qBc-B7g_BZ9nSC9w13R9_0XNfQwtx4zHBDpKkh8ty9wPONIETGYI1dT7GjjdSgVUNW"
+           "NYgOVBXRsjHyKqre6FoRuzcy0HCn2OS6TbpZiNebu4Hk0qHdr-X7CunG5FaxUx5v2RjTZpMcKZLga86-rW8Knl4VhlrixXVoJTLs2WwiE3WH"
+           "G7XF8oO6I5BtZztUJS5Je3G7ydwWDB0FqWLR-1faCjT_iquT-2Y7rgTahkb3e1uS4VA8lXQ1RyjXysZ6r8EPE83so2AoWUCvbiQ8YmK1ytmq"
+           "xCac3YrkfC11oRwp1V4kS4Qv59lIhsWwPlzJ62m8zC6TwKQATZh4u20aeGqxijMMyOMUnRrOGBQsGvAsey29pYv0JT_wTNQz3mcXA7WtMves"
+           "gYa0XMeLc1H3dPLw-dT5JPZ58irIlmZm5hYyNzNLmV-T2PFU-o9flj6823qMVZ9k3wr001eZs6lVNybcAsPRA9K_L3obNT-S-NC0g5gxY3W_"
+           "D2OKTTsS8qnGGlUijqaxo-npb9PYwyuZN7P__c0XczcggAAnCByQSwCWIFUq5JXT-cxv0&cbcxt=&mkt=&lc=")
+
+driver.find_element_by_id("userNameInput").send_keys(fieldValues[0])       # fieldValues is an array of username, password
+driver.find_element_by_id("passwordInput").send_keys(fieldValues[1])
+driver.find_element_by_id("submitButton").click()
 # Grabbing numbers
-#
+
 
 try:
     driver.get("https://hscic365.crm11.dynamics.com/crmreports/viewer/viewer.aspx?action=filter&id=9d3b28aa-ad14-e911-a9e2-000d3a2bb31e&helpID=DARS-ProcessStage_v5new.rdl")
@@ -358,7 +384,7 @@ excel = win32.gencache.EnsureDispatch('Excel.Application')
 
 excel.Visible = True  # Makes excel visible, this can be changed to false if you don't want it to pop up
 
-file = "https://hscic365.sharepoint.com/sites/DDS/Delivering%20Data%20Access%20Online/CRM_Migration/AutofillBook.xlsx?web=1"  # Location of the automation book
+file = 'C:/Users/Rashad/Documents/Python Projects/Automate_Friday/Test_Book.xlsx'  # Location of the automation book
 wb = excel.Workbooks.Open(file)
 ws = wb.Worksheets('Total_Apps_AutoFill')  # After opening the file as wb (workbook) you now go to individual worksheets
 
